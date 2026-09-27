@@ -44,7 +44,8 @@
         "sed s/^Icon=.*/Icon=io.github.imamAtif.PomoTux/ packaging/io.github.pomotux.desktop > /app/share/applications/io.github.imamAtif.PomoTux.desktop",
         "for s in 16 32 48 64 128 256 512; do install -Dm644 packaging/icons/hicolor/${s}x${s}/apps/io.github.pomotux.png /app/share/icons/hicolor/${s}x${s}/apps/io.github.imamAtif.PomoTux.png; done",
         "install -Dm644 packaging/icons/io.github.pomotux.svg /app/share/icons/hicolor/scalable/apps/io.github.imamAtif.PomoTux.svg",
-        "install -Dm644 packaging/flatpak/io.github.imamAtif.PomoTux.metainfo.xml /app/share/metainfo/io.github.imamAtif.PomoTux.metainfo.xml"
+        "install -Dm644 packaging/flatpak/io.github.imamAtif.PomoTux.metainfo.xml /app/share/metainfo/io.github.imamAtif.PomoTux.metainfo.xml",
+        "install -Dm644 LICENSE /app/share/licenses/io.github.imamAtif.PomoTux/pomotux"
       ]
     }
   ]
