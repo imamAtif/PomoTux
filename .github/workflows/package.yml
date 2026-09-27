@@ -1,7 +1,8 @@
 name: Package
 
-# Every push to main builds tarball + AppImage + .deb + .rpm.
-# Pushing a tag like v0.2.0 additionally attaches them to a GitHub Release.
+# build -> {tarball, deb, rpm, appimage} in parallel -> release.
+# Every push to main builds all four; v* tags additionally attach them
+# to a GitHub Release.
 on:
   push:
     branches: [main]
@@ -12,8 +13,10 @@ permissions:
   contents: write
 
 jobs:
-  build-linux:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,17 +33,92 @@ jobs:
         run: python -m compileall -q pomotux main.py
 
       - name: Resolve version
+        id: ver
         run: |
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "VERSION=0.0.0+${GITHUB_SHA:0:7}" >> "$GITHUB_ENV"
+            echo "version=0.0.0+${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build with PyInstaller
         run: pyinstaller --noconfirm --name PomoTux --onedir --windowed main.py
 
-      - name: Stage install tree
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyinstaller-dist
+          path: dist/PomoTux
+
+  tarball:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pyinstaller-dist
+          path: dist/PomoTux
+
+      - name: Pack tarball
+        run: tar -czf "PomoTux-${{ needs.build.outputs.version }}-linux-x86_64.tar.gz" -C dist PomoTux
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pomotux-tarball
+          path: PomoTux-*.tar.gz
+
+  deb:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: pyinstaller-dist
+          path: dist/PomoTux
+
+      - name: Build .deb
+        run: |
+          rm -rf pkgroot
+          mkdir -p pkgroot/opt/pomotux pkgroot/usr/bin \
+            pkgroot/usr/share/applications pkgroot/usr/share/icons pkgroot/DEBIAN
+          cp -r dist/PomoTux/. pkgroot/opt/pomotux/
+          ln -s /opt/pomotux/PomoTux pkgroot/usr/bin/pomotux
+          cp packaging/io.github.pomotux.desktop pkgroot/usr/share/applications/
+          cp -r packaging/icons/hicolor pkgroot/usr/share/icons/
+          cp packaging/icons/io.github.pomotux.svg pkgroot/usr/share/icons/
+          {
+            echo "Package: pomotux"
+            echo "Version: ${{ needs.build.outputs.version }}"
+            echo "Section: utils"
+            echo "Priority: optional"
+            echo "Architecture: amd64"
+            echo "Maintainer: PomoTux Developers"
+            echo "Description: Lightweight premium Pomodoro timer for Linux"
+            echo " PomoTux is a fast, native Pomodoro timer with tasks,"
+            echo " stats, tray integration and custom themes."
+          } > pkgroot/DEBIAN/control
+          dpkg-deb --root-owner-group --build pkgroot \
+            "pomotux-${{ needs.build.outputs.version }}-amd64.deb"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pomotux-deb
+          path: pomotux-*.deb
+
+  rpm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: pyinstaller-dist
+          path: dist/PomoTux
+
+      - name: Build .rpm
         run: |
           rm -rf pkgroot
           mkdir -p pkgroot/opt/pomotux pkgroot/usr/bin \
@@ -50,34 +128,27 @@ jobs:
           cp packaging/io.github.pomotux.desktop pkgroot/usr/share/applications/
           cp -r packaging/icons/hicolor pkgroot/usr/share/icons/
           cp packaging/icons/io.github.pomotux.svg pkgroot/usr/share/icons/
-
-      - name: Pack tarball
-        run: tar -czf "PomoTux-${VERSION}-linux-x86_64.tar.gz" -C dist PomoTux
-
-      - name: Build .deb
-        run: |
-          mkdir -p pkgroot/DEBIAN
-          {
-            echo "Package: pomotux"
-            echo "Version: $VERSION"
-            echo "Section: utils"
-            echo "Priority: optional"
-            echo "Architecture: amd64"
-            echo "Maintainer: PomoTux Developers"
-            echo "Description: Lightweight premium Pomodoro timer for Linux"
-            echo " PomoTux is a fast, native Pomodoro timer with tasks,"
-            echo " stats, tray integration and custom themes."
-          } > pkgroot/DEBIAN/control
-          dpkg-deb --root-owner-group --build pkgroot "pomotux-${VERSION}-amd64.deb"
-          rm -rf pkgroot/DEBIAN
-
-      - name: Build .rpm
-        run: |
           sudo gem install --no-document fpm
-          fpm -s dir -t rpm -C pkgroot --name pomotux --version "$VERSION" \
-            --architecture x86_64 \
+          fpm -s dir -t rpm -C pkgroot --name pomotux \
+            --version "${{ needs.build.outputs.version }}" --architecture x86_64 \
             --description "Lightweight premium Pomodoro timer for Linux" \
-            --package "pomotux-${VERSION}-x86_64.rpm" opt usr
+            --package "pomotux-${{ needs.build.outputs.version }}-x86_64.rpm" opt usr
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pomotux-rpm
+          path: pomotux-*.rpm
+
+  appimage:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: pyinstaller-dist
+          path: dist/PomoTux
 
       - name: Build AppImage
         run: |
@@ -90,23 +161,28 @@ jobs:
           chmod +x AppDir/AppRun
           wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool
           chmod +x appimagetool
-          ARCH=x86_64 ./appimagetool --appimage-extract-and-run AppDir "PomoTux-${VERSION}-x86_64.AppImage"
+          ARCH=x86_64 ./appimagetool --appimage-extract-and-run AppDir \
+            "PomoTux-${{ needs.build.outputs.version }}-x86_64.AppImage"
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: pomotux-packages
-          path: |
-            PomoTux-*.tar.gz
-            pomotux-*.deb
-            pomotux-*.rpm
-            PomoTux-*.AppImage
+          name: pomotux-appimage
+          path: PomoTux-*.AppImage
+
+  release:
+    needs: [tarball, deb, rpm, appimage]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: release-assets
 
       - name: Attach to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
-          gh release upload "$TAG" PomoTux-*.tar.gz pomotux-*.deb pomotux-*.rpm PomoTux-*.AppImage --clobber
+          gh release upload "$TAG" release-assets/* --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
