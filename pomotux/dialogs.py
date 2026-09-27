@@ -81,10 +81,12 @@ class SettingsDialog(QDialog):
         self.cb_dnd = QCheckBox("Auto Do-Not-Disturb"); self.cb_dnd.setChecked(s.dnd)
         self.cb_overlay = QCheckBox("Break overlay"); self.cb_overlay.setChecked(s.break_overlay)
         self.cb_auto = QCheckBox("Autostart on login"); self.cb_auto.setChecked(s.autostart)
+        self.cb_block = QCheckBox("Block websites during focus"); self.cb_block.setChecked(s.blocker_enabled)
         self.cb_ab = QCheckBox("Auto-start breaks"); self.cb_ab.setChecked(s.auto_start_breaks)
         self.cb_af = QCheckBox("Auto-start next focus"); self.cb_af.setChecked(s.auto_start_focus)
         for w in (self.cb_sound, self.cb_notify, self.cb_tray, self.cb_dnd,
-                  self.cb_overlay, self.cb_auto, self.cb_ab, self.cb_af):
+                  self.cb_overlay, self.cb_auto, self.cb_block,
+                  self.cb_ab, self.cb_af):
             form.addRow(w)
 
         self.key_toggle = QKeySequenceEdit(QKeySequence(s.shortcut_toggle))
@@ -175,7 +177,7 @@ class SettingsDialog(QDialog):
             if seq:
                 setattr(s, attr, seq)
         s.blocked_hosts = [h.strip() for h in self.ed_hosts.text().split(",") if h.strip()]
-        s.blocker_enabled = bool(s.blocked_hosts)
+        s.blocker_enabled = self.cb_block.isChecked()
 
 
 class BreakOverlay(QDialog):

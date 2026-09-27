@@ -31,7 +31,7 @@ notifications.
 - **Tasks**: link the current task to the timer; completed pomodoros count per task
 - **Stats**: today's progress vs. daily goal, 7-day bar chart, day streak: all local SQLite
 - **Desktop integration**: tray icon with live time, native notifications, chime, minimize-to-tray, autostart
-- **Focus extras (all opt-in)**: GNOME Do-Not-Disturb, fullscreen break reminder, host blocker list
+- **Focus extras (all opt-in)**: GNOME Do-Not-Disturb, fullscreen break reminder, website blocker (requires sudo, see below)
 - **Themes**: follows your GNOME/KDE dark/light mode, with accent-color picker and Tux branding
 - **Private by design**: everything stays on your machine; move devices with one JSON export/import
 
@@ -64,6 +64,19 @@ Grab the latest build from the
 
 Settings (durations, theme, shortcuts, sounds, autostart, blocked hosts) all
 live behind the ⚙ button, and persist to `~/.config/pomotux/settings.json`.
+
+### Website blocker
+
+Tick *Settings → Block websites during focus* and list the hosts. While a
+focus session runs, those domains (plus their `www.` variants) resolve to
+localhost in every browser. The toggle is the master switch: off means the
+list is ignored entirely.
+
+Enabling the blocker requires sudo. Blocking works by writing a managed block
+to `/etc/hosts`, which only root can change, so the app asks for your password
+(via a `pkexec` prompt) when a focus session starts. The block is removed on
+break or quit. No prompt appears when nothing needs changing, and denying
+authorization only disables blocking: the timer always keeps working.
 
 ## Build from source
 

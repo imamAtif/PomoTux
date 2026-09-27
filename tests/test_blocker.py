@@ -1,9 +1,21 @@
 """Hosts-file site blocker: pure logic plus window wiring (root mocked)."""
 from pomotux import platform_linux as plat
 from pomotux.config import Settings
+from pomotux.dialogs import SettingsDialog
 from pomotux.main_window import MainWindow
 from pomotux.store import Store
 from pomotux.timer import Phase, PomodoroTimer
+
+
+def test_blocker_toggle_overrides_list(tmp_path, app):
+    s = Settings(blocker_enabled=True, blocked_hosts=["youtube.com"])
+    dlg = SettingsDialog(s, Store(tmp_path / "d.db"))
+    assert dlg.cb_block.isChecked()
+    dlg.cb_block.setChecked(False)  # list stays, blocking stops
+    dlg.ed_hosts.setText("youtube.com")
+    dlg.apply(s)
+    assert s.blocked_hosts == ["youtube.com"]
+    assert s.blocker_enabled is False
 
 
 def test_variants_expand_www():
@@ -55,6 +67,17 @@ def test_set_hosts_writes_and_escalates(tmp_path, monkeypatch):
     assert plat.set_hosts_blocked(["x.com"], True, str(f)) is True
     assert calls and b"x.com" in calls[0][1]
     f.chmod(0o644)
+
+
+def test_toggle_off_ignores_list(tmp_path, app, monkeypatch):
+    s = Settings(blocker_enabled=False, blocked_hosts=["youtube.com"])
+    store = Store(tmp_path / "t.db")
+    timer = PomodoroTimer(focus_s=60, short_s=60, long_s=60)
+    win = MainWindow(timer, store, s)
+    monkeypatch.setattr(plat, "set_hosts_blocked", lambda *a: (_ for _ in ()).throw(
+        AssertionError("must not touch hosts when toggle is off")))
+    timer.start()
+    assert win._sites_blocked is False
 
 
 def test_window_blocks_on_focus_unblocks_on_break(tmp_path, app, monkeypatch):
