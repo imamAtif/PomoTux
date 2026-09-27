@@ -1,6 +1,6 @@
 name: Package
 
-# build -> {tarball, deb, rpm, appimage} in parallel -> release.
+# build -> {tarball, deb, rpm, appimage, flatpak} in parallel -> release.
 # Every push to main refreshes the rolling `dev` prerelease automatically.
 # Pushing a v* tag additionally publishes a stable versioned release.
 on:
@@ -169,8 +169,45 @@ jobs:
           name: pomotux-appimage
           path: PomoTux-*.AppImage
 
+  flatpak:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install flatpak
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq flatpak flatpak-builder
+
+      - name: Install KDE SDK
+        run: |
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.kde.Platform//6.9 org.kde.Sdk//6.9
+
+      - name: Build
+        run: >
+          sudo flatpak-builder --force-clean --ccache --disable-rofiles-fuse
+          --repo=repo build-dir packaging/flatpak/io.github.imamAtif.PomoTux.json
+
+      - name: Smoke test
+        run: >
+          sudo flatpak-builder --run build-dir
+          packaging/flatpak/io.github.imamAtif.PomoTux.json
+          python3 /app/share/pomotux/main.py --version
+
+      - name: Bundle
+        run: >
+          sudo flatpak build-bundle repo
+          "pomotux-${{ needs.build.outputs.version }}-x86_64.flatpak"
+          io.github.imamAtif.PomoTux
+          && sudo chown runner:runner pomotux-*.flatpak
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pomotux-flatpak
+          path: pomotux-*.flatpak
+
   release:
-    needs: [tarball, deb, rpm, appimage]
+    needs: [tarball, deb, rpm, appimage, flatpak]
     runs-on: ubuntu-latest
     concurrency:
       group: pomotux-release
