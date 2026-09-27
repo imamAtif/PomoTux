@@ -94,6 +94,8 @@ def set_autostart(on: bool):
 
 START_MARK = "# pomotux block start (managed by PomoTux, do not edit)"
 END_MARK = "# pomotux block end"
+_HELPER = "/usr/bin/pomotux-hosts"  # one-time sudo setup, then silent
+MANUAL_UNBLOCK = "sudo sed -i '/# pomotux block start/,/# pomotux block end/d' /etc/hosts"
 
 
 def blocked_variants(hosts: list[str]) -> list[str]:
@@ -129,6 +131,13 @@ def update_hosts(text: str, hosts: list[str], blocked: bool) -> str:
     return out + "\n" if text.endswith("\n") and out else out
 
 
+def has_managed_block(hosts_file: str = "/etc/hosts") -> bool:
+    try:
+        return START_MARK in Path(hosts_file).read_text()
+    except OSError:
+        return False
+
+
 def set_hosts_blocked(hosts: list[str], blocked: bool,
                       hosts_file: str = "/etc/hosts") -> bool:
     """Apply/remove the DNS block. Asks for root only when a change is needed."""
@@ -147,9 +156,18 @@ def set_hosts_blocked(hosts: list[str], blocked: bool,
     if not shutil.which("pkexec"):
         return False
     try:
-        r = subprocess.run(["pkexec", "tee", hosts_file], input=updated.encode(),
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                           check=False)
+        if Path(_HELPER).is_file():
+            # Silent after the one-time sudo setup (polkit rule).
+            clean = [h.strip() for h in hosts if h.strip()]
+            argv = ["pkexec", _HELPER, "clear"] if not (blocked and clean) \
+                else ["pkexec", _HELPER, "block", *clean]
+            r = subprocess.run(argv, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, check=False)
+        else:
+            # No helper: fall back to a per-change password prompt.
+            r = subprocess.run(["pkexec", "tee", hosts_file], input=updated.encode(),
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                               check=False)
         return r.returncode == 0
     except Exception:
         return False

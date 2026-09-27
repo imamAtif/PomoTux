@@ -104,6 +104,7 @@ class MainWindow(QMainWindow):
         self.refresh_tasks()
         self.refresh_stats()
         self.apply_theme()
+        self._heal_stale_block()
 
     # -- tabs -------------------------------------------------------------
     def _tasks_tab(self) -> QWidget:
@@ -334,13 +335,33 @@ class MainWindow(QMainWindow):
         self.setVisible(not self.isVisible())
 
     def close_app(self):
-        if self._sites_blocked:
-            plat.set_hosts_blocked(self.s.blocked_hosts, False)
-            self._sites_blocked = False
+        self._clear_block_or_warn()
         plat.set_dnd(False)
         self.tray.hide()
         from PySide6.QtWidgets import QApplication
         QApplication.quit()
+
+    def _clear_block_or_warn(self) -> bool:
+        """Remove any managed block. Warns loudly when root is denied."""
+        # No-op (no prompt) when the file is already clean.
+        removed = plat.set_hosts_blocked([], False)
+        self._sites_blocked = self._sites_blocked and not removed
+        if removed or not plat.has_managed_block():
+            return True
+        plat.notify(self.tray, "PomoTux",
+                    "Website block still active (needs root). "
+                    f"Remove it with: {plat.MANUAL_UNBLOCK}", True)
+        return False
+
+    def _heal_stale_block(self):
+        # A kill mid-focus can strand the block. Clear it at launch unless
+        # the blocker is on (next focus start then manages it deterministically).
+        if (self.s.blocker_enabled and self.s.blocked_hosts) \
+                or not plat.has_managed_block():
+            return
+        plat.notify(self.tray, "PomoTux",
+                    "Removing leftover website block: authorization needed", True)
+        self._clear_block_or_warn()
 
     def closeEvent(self, e):
         if self.s.minimize_to_tray and self.tray.isVisible():

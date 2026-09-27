@@ -80,6 +80,58 @@ def test_toggle_off_ignores_list(tmp_path, app, monkeypatch):
     assert win._sites_blocked is False
 
 
+def test_helper_preferred_over_tee(tmp_path, monkeypatch):
+    f = tmp_path / "hosts"
+    f.write_text("127.0.0.1 localhost\n")
+    f.chmod(0o444)  # force the privileged path
+    helper = str(__import__("pathlib").Path("packaging/block-helper/pomotux-hosts").absolute())
+    monkeypatch.setattr(plat, "_HELPER", helper)
+    monkeypatch.setattr(plat.shutil, "which", lambda binary: f"/usr/bin/{binary}")
+    calls = []
+
+    class Proc:
+        returncode = 0
+
+    monkeypatch.setattr(plat.subprocess, "run",
+                        lambda argv, **kw: calls.append(argv) or Proc())
+    assert plat.set_hosts_blocked(["YouTube.com "], True, str(f)) is True
+    assert calls == [["pkexec", helper, "block", "YouTube.com"]]
+    f.chmod(0o644)
+
+
+def test_has_managed_block(tmp_path):
+    f = tmp_path / "hosts"
+    f.write_text("127.0.0.1 localhost\n")
+    assert plat.has_managed_block(str(f)) is False
+    f.write_text(plat.update_hosts(f.read_text(), ["x.com"], True))
+    assert plat.has_managed_block(str(f)) is True
+
+
+def test_clear_warns_when_root_denied(tmp_path, app, monkeypatch):
+    s = Settings(blocker_enabled=True, blocked_hosts=["youtube.com"])
+    win = MainWindow.__new__(MainWindow)  # helper only needs tray + settings
+    win.s = s
+    win._sites_blocked = True
+    notes = []
+    monkeypatch.setattr(plat, "set_hosts_blocked", lambda *a: False)
+    monkeypatch.setattr(plat, "has_managed_block", lambda *a: True)
+    monkeypatch.setattr(plat, "notify",
+                        lambda tray, title, body, enabled: notes.append(body))
+    win.tray = None
+    assert win._clear_block_or_warn() is False
+    assert notes and "sudo sed" in notes[0]
+
+
+def test_heal_skips_when_blocker_on(tmp_path, app, monkeypatch):
+    s = Settings(blocker_enabled=True, blocked_hosts=["youtube.com"])
+    store = Store(tmp_path / "h.db")
+    timer = PomodoroTimer(focus_s=60, short_s=60, long_s=60)
+    monkeypatch.setattr(plat, "has_managed_block", lambda *a: True)
+    monkeypatch.setattr(plat, "set_hosts_blocked", lambda *a: (_ for _ in ()).throw(
+        AssertionError("heal must not touch a consented block")))
+    MainWindow(timer, store, s)  # init runs the heal check
+
+
 def test_window_blocks_on_focus_unblocks_on_break(tmp_path, app, monkeypatch):
     s = Settings(break_overlay=False, notify=False, sound=False,
                  blocker_enabled=True, blocked_hosts=["youtube.com"])

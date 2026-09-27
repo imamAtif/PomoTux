@@ -32,9 +32,13 @@ for s in 16 32 48 64 128 256 512; do
   install -Dpm644 packaging/icons/hicolor/${s}x${s}/apps/io.github.pomotux.png %{buildroot}%{_datadir}/icons/hicolor/${s}x${s}/apps/io.github.pomotux.png
 done
 install -Dpm644 packaging/icons/io.github.pomotux.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/io.github.pomotux.svg
+install -Dpm755 packaging/block-helper/pomotux-hosts %{buildroot}%{_bindir}/pomotux-hosts
+install -Dpm644 packaging/block-helper/io.github.pomotux.rules %{buildroot}%{_datadir}/polkit-1/rules.d/io.github.pomotux.rules
 
 %files
 %{_bindir}/pomotux
+%{_bindir}/pomotux-hosts
+%{_datadir}/polkit-1/rules.d/io.github.pomotux.rules
 %{python3_sitelib}/main.py
 %{python3_sitelib}/__pycache__/main.*.pyc
 %{python3_sitelib}/pomotux/

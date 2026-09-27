@@ -1,0 +1,10 @@
+// Lets PomoTux update ONLY its own hosts block without a password,
+// once this file is installed (needs sudo, one time).
+// The helper itself refuses anything but 127.0.0.1 lines inside its markers.
+polkit.addRule(function(action, subject) {
+    if (action.id === "org.freedesktop.policykit.exec" &&
+        action.lookup("program") === "/usr/bin/pomotux-hosts" &&
+        subject.local && subject.active) {
+        return polkit.Result.YES;
+    }
+});

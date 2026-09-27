@@ -1,4 +1,6 @@
 packaging/io.github.pomotux.desktop usr/share/applications
+packaging/block-helper/pomotux-hosts usr/bin
+packaging/block-helper/io.github.pomotux.rules usr/share/polkit-1/rules.d
 packaging/icons/hicolor/16x16/apps/io.github.pomotux.png usr/share/icons/hicolor/16x16/apps
 packaging/icons/hicolor/32x32/apps/io.github.pomotux.png usr/share/icons/hicolor/32x32/apps
 packaging/icons/hicolor/48x48/apps/io.github.pomotux.png usr/share/icons/hicolor/48x48/apps

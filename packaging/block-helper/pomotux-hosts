@@ -1,0 +1,45 @@
+#!/bin/sh
+# pomotux-hosts: rewrite ONLY the PomoTux-managed block of the hosts file.
+# Runs as root via pkexec. Installed once with:
+#   sudo ./packaging/block-helper/install.sh
+# Usage: pomotux-hosts block [host...] | pomotux-hosts clear
+set -eu
+HOSTS_FILE="${POMOTUX_HOSTS_FILE:-/etc/hosts}"
+START="# pomotux block start (managed by PomoTux, do not edit)"
+END="# pomotux block end"
+
+fail() { echo "pomotux-hosts: $1" >&2; exit "${2:-1}"; }
+[ -f "$HOSTS_FILE" ] || fail "hosts file not found: $HOSTS_FILE"
+
+cmd="${1:-}"; [ $# -gt 0 ] && shift
+hosts=""
+case "$cmd" in
+  block)
+    for h in "$@"; do
+      h=$(printf '%s' "$h" | tr 'A-Z' 'a-z')
+      case "$h" in ""|*[!a-z0-9.-]*|.*|*..*) fail "refusing invalid host: $h" 2;; esac
+      case "$h" in www.*) other=${h#www.};; *) other="www.$h";; esac
+      hosts="${hosts:+$hosts
+}127.0.0.1 $h
+127.0.0.1 $other"
+    done
+    ;;
+  clear) ;;
+  *) fail "usage: pomotux-hosts block [host...] | pomotux-hosts clear" 2;;
+esac
+
+tmp=$(mktemp) || exit 1
+awk -v start="$START" -v end="$END" '
+  $0 == start {skip=1; next}
+  $0 == end {skip=0; next}
+  !skip {print}
+' "$HOSTS_FILE" > "$tmp"
+if [ -n "$hosts" ]; then
+  {
+    printf '%s\n' "$START"
+    printf '%s\n' "$hosts" | sort -u
+    printf '%s\n' "$END"
+  } >> "$tmp"
+fi
+cat "$tmp" > "$HOSTS_FILE"  # redirect keeps the file's owner and mode
+rm -f "$tmp"

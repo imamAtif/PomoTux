@@ -72,11 +72,20 @@ focus session runs, those domains (plus their `www.` variants) resolve to
 localhost in every browser. The toggle is the master switch: off means the
 list is ignored entirely.
 
-Enabling the blocker requires sudo. Blocking works by writing a managed block
-to `/etc/hosts`, which only root can change, so the app asks for your password
-(via a `pkexec` prompt) when a focus session starts. The block is removed on
-break or quit. No prompt appears when nothing needs changing, and denying
-authorization only disables blocking: the timer always keeps working.
+Blocking works by writing a managed block to `/etc/hosts`, which only root
+can change. Two ways to authorize it:
+
+* **Once (recommended):** run `sudo ./packaging/block-helper/install.sh`
+  (deb/rpm packages do this for you). After that, blocking and unblocking
+  are silent forever.
+* **Without setup:** the app asks for your password via `pkexec` every time
+  the block is applied or removed (each focus and break start).
+
+The block is removed on break or quit. If the app is ever killed mid-focus,
+the next launch detects the leftover block and clears it. Denying
+authorization never breaks the timer; it only leaves sites unblocked. If a
+block ever gets stranded, remove it with:
+`sudo sed -i '/# pomotux block start/,/# pomotux block end/d' /etc/hosts`.
 
 ## Build from source
 
