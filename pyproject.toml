@@ -24,3 +24,6 @@ py-modules = ["main"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pomotux*"]
+
+[tool.setuptools.package-data]
+pomotux = ["sounds/*.wav"]

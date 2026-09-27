@@ -1,29 +1,56 @@
-"""Linux integrations: notify, beep, DND, autostart. Best-effort, never fatal."""
+"""Linux integrations: notify, sound, DND, autostart. Best-effort, never fatal."""
 from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication
+_SOUNDS = Path(__file__).parent / "sounds"
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    # PyInstaller bundle: datas land under <bundle>/pomotux/sounds
+    _SOUNDS = Path(sys._MEIPASS) / "pomotux" / "sounds"
+
+# Ordered by latency/quality: paplay is sample-accurate, canberra is the
+# GNOME default, aplay is the ALSA fallback. First one found wins.
+_PLAYERS = (
+    ("paplay", ["{f}"]),
+    ("canberra-gtk-play", ["-f", "{f}"]),
+    ("aplay", ["-q", "{f}"]),
+)
 
 
-def notify(app: QApplication, tray, title: str, body: str, enabled: bool):
+def notify(tray, title: str, body: str, enabled: bool):
     if not enabled:
         return
-    try:  # native tray bubble (works on most DEs)
-        if tray and tray.isVisible():
-            tray.showMessage(title, body, tray.MessageIcon.Information, 5000)
+    # notify-send first: it reaches the notification center even when no
+    # system tray exists (stock GNOME). Tray bubble is the fallback.
+    if shutil.which("notify-send"):
+        subprocess.Popen(["notify-send", "-a", "PomoTux", title, body],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif tray is not None:
+        try:
+            if tray.isVisible():
+                tray.showMessage(title, body, tray.MessageIcon.Information, 5000)
+        except Exception:
+            pass
+
+
+def play_sound(name: str, enabled: bool):
+    """Play a bundled chime (break_start/focus_start). Non-blocking."""
+    if not enabled:
+        return
+    clip = _SOUNDS / f"{name}.wav"
+    if not clip.exists():
+        return
+    for binary, args in _PLAYERS:
+        if shutil.which(binary):
+            try:
+                subprocess.Popen([binary, *[a.format(f=str(clip)) for a in args]],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
             return
-    except Exception:
-        pass
-    if shutil.which("notify-send"):  # fallback for Wayland w/o tray
-        subprocess.Popen(["notify-send", title, body])
-
-
-def beep(enabled: bool):
-    if enabled:
-        QApplication.beep()
 
 
 def set_dnd(on: bool):

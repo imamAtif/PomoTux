@@ -210,10 +210,14 @@ class MainWindow(QMainWindow):
         else:
             self.store.log_session(kind, 60, None)
         self.refresh_stats()
-        plat.beep(self.s.sound)
-        plat.notify(self, self.tray, "PomoTux",
-                    "Focus done: break time 🐧" if kind == "focus" else "Break over: back to it!",
-                    self.s.notify)
+        if kind == "focus":
+            plat.play_sound("break_start", self.s.sound)
+            plat.notify(self.tray, "PomoTux", "Focus done: break time",
+                        self.s.notify)
+        else:
+            plat.play_sound("focus_start", self.s.sound)
+            plat.notify(self.tray, "PomoTux", "Break over: back to it!",
+                        self.s.notify)
         # DND only during focus
         plat.set_dnd(self.s.dnd and self.timer.phase != Phase.FOCUS)
         if kind == "focus" and self.s.break_overlay:
