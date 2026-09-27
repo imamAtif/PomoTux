@@ -1,0 +1,14 @@
+Source: pomotux
+Section: utils
+Priority: optional
+Maintainer: PomoTux Developers <dev@pomotux.local>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
+Rules-Requires-Root: no
+Standards-Version: 4.6.2
+
+Package: pomotux
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3-pyside6
+Description: Lightweight premium Pomodoro timer for Linux
+ PomoTux is a fast, native Pomodoro timer with tasks,
+ stats, tray integration and custom themes.

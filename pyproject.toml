@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Version is single-sourced from pomotux.__version__.
+[project]
+name = "pomotux"
+dynamic = ["version"]
+description = "Lightweight premium Pomodoro timer for Linux"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-only" }
+dependencies = ["PySide6-Essentials>=6.10"]
+
+[project.scripts]
+pomotux = "main:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "pomotux.__version__" }
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pomotux*"]

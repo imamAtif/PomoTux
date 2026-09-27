@@ -1,0 +1,9 @@
+packaging/io.github.pomotux.desktop usr/share/applications
+packaging/icons/hicolor/16x16/apps/io.github.pomotux.png usr/share/icons/hicolor/16x16/apps
+packaging/icons/hicolor/32x32/apps/io.github.pomotux.png usr/share/icons/hicolor/32x32/apps
+packaging/icons/hicolor/48x48/apps/io.github.pomotux.png usr/share/icons/hicolor/48x48/apps
+packaging/icons/hicolor/64x64/apps/io.github.pomotux.png usr/share/icons/hicolor/64x64/apps
+packaging/icons/hicolor/128x128/apps/io.github.pomotux.png usr/share/icons/hicolor/128x128/apps
+packaging/icons/hicolor/256x256/apps/io.github.pomotux.png usr/share/icons/hicolor/256x256/apps
+packaging/icons/hicolor/512x512/apps/io.github.pomotux.png usr/share/icons/hicolor/512x512/apps
+packaging/icons/io.github.pomotux.svg usr/share/icons/hicolor/scalable/apps
