@@ -37,7 +37,7 @@
         }
       ],
       "build-commands": [
-        "mkdir -p /app/share/pomotux /app/bin",
+        "mkdir -p /app/share/pomotux /app/bin /app/share/applications",
         "cp main.py /app/share/pomotux/",
         "cp -r pomotux /app/share/pomotux/",
         "install -Dm755 packaging/flatpak/pomotux-wrapper.sh /app/bin/pomotux",

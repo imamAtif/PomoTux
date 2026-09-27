@@ -187,7 +187,7 @@ jobs:
       - name: Install KDE SDK
         run: |
           sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak install -y flathub org.kde.Platform//6.9 org.kde.Sdk//6.9
+          sudo flatpak install -y flathub org.kde.Platform//6.9 org.kde.Sdk//6.9 io.qt.PySide.BaseApp//6.9
 
       - name: Build
         run: >
