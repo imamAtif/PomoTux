@@ -25,7 +25,7 @@ class Settings:
 
     sound: bool = True
     notify: bool = True
-    minimize_to_tray: bool = True
+    minimize_to_tray: bool = False  # X quits; enable to hide instead
 
     # Custom alert files. Empty means the bundled chime.
     break_sound: str = ""

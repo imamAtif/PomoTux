@@ -334,6 +334,12 @@ class MainWindow(QMainWindow):
     def _toggle_vis(self):
         self.setVisible(not self.isVisible())
 
+    def present(self):
+        """Bring the dashboard forward (second launch wakes the first)."""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
     def close_app(self):
         self._clear_block_or_warn()
         plat.set_dnd(False)
