@@ -211,11 +211,11 @@ class MainWindow(QMainWindow):
             self.store.log_session(kind, 60, None)
         self.refresh_stats()
         if kind == "focus":
-            plat.play_sound("break_start", self.s.sound)
+            plat.play_alert(self.s.break_sound, "break_start", self.s.sound)
             plat.notify(self.tray, "PomoTux", "Focus done: break time",
                         self.s.notify)
         else:
-            plat.play_sound("focus_start", self.s.sound)
+            plat.play_alert(self.s.focus_sound, "focus_start", self.s.sound)
             plat.notify(self.tray, "PomoTux", "Break over: back to it!",
                         self.s.notify)
         # DND only during focus

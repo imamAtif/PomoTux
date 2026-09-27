@@ -36,12 +36,12 @@ def notify(tray, title: str, body: str, enabled: bool):
             pass
 
 
-def play_sound(name: str, enabled: bool):
-    """Play a bundled chime (break_start/focus_start). Non-blocking."""
+def play_file(clip, enabled: bool):
+    """Play any audio file. Non-blocking, never raises."""
     if not enabled:
         return
-    clip = _SOUNDS / f"{name}.wav"
-    if not clip.exists():
+    clip = Path(str(clip)).expanduser()
+    if not clip.is_file():
         return
     for binary, args in _PLAYERS:
         if shutil.which(binary):
@@ -51,6 +51,19 @@ def play_sound(name: str, enabled: bool):
             except Exception:
                 pass
             return
+
+
+def play_sound(name: str, enabled: bool):
+    """Play a bundled chime (break_start/focus_start)."""
+    play_file(_SOUNDS / f"{name}.wav", enabled)
+
+
+def play_alert(custom: str, fallback: str, enabled: bool):
+    """Play the user's file when set, otherwise the bundled chime."""
+    if custom and Path(custom).expanduser().is_file():
+        play_file(custom, enabled)
+    else:
+        play_sound(fallback, enabled)
 
 
 def set_dnd(on: bool):

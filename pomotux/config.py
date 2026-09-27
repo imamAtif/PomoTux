@@ -27,6 +27,10 @@ class Settings:
     notify: bool = True
     minimize_to_tray: bool = True
 
+    # Custom alert files. Empty means the bundled chime.
+    break_sound: str = ""
+    focus_sound: str = ""
+
     # Focus extras (all opt-in via onboarding, toggleable later)
     dnd: bool = False
     break_overlay: bool = True

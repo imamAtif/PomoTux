@@ -7,8 +7,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (QCheckBox, QColorDialog, QComboBox, QDialog, QDialogButtonBox,
                                QFileDialog, QFormLayout, QHBoxLayout, QKeySequenceEdit,
-                               QLabel, QLineEdit, QPushButton, QSpinBox, QVBoxLayout)
+                               QLabel, QLineEdit, QPushButton, QSpinBox, QVBoxLayout,
+                               QWidget)
 
+from . import platform_linux as plat
 from .config import Settings
 
 
@@ -72,6 +74,8 @@ class SettingsDialog(QDialog):
         form.addRow("Accent", self.btn_accent)
 
         self.cb_sound = QCheckBox("Sound chime"); self.cb_sound.setChecked(s.sound)
+        self.ed_break_sound = self._sound_row(form, "Break starts", s.break_sound, "break_start")
+        self.ed_focus_sound = self._sound_row(form, "Focus starts", s.focus_sound, "focus_start")
         self.cb_notify = QCheckBox("Desktop notifications"); self.cb_notify.setChecked(s.notify)
         self.cb_tray = QCheckBox("Minimize to tray"); self.cb_tray.setChecked(s.minimize_to_tray)
         self.cb_dnd = QCheckBox("Auto Do-Not-Disturb"); self.cb_dnd.setChecked(s.dnd)
@@ -106,6 +110,29 @@ class SettingsDialog(QDialog):
         btns.accepted.connect(self.accept); btns.rejected.connect(self.reject)
         lay.addWidget(btns)
 
+    def _sound_row(self, form: QFormLayout, label: str, current: str, fallback: str) -> QLineEdit:
+        """Path field (empty = bundled chime) with Browse and preview."""
+        box = QWidget()
+        row = QHBoxLayout(box)
+        row.setContentsMargins(0, 0, 0, 0)
+        edit = QLineEdit(current, placeholderText="Bundled chime")
+        browse = QPushButton("Browse")
+        browse.clicked.connect(lambda: self._browse_sound(edit))
+        preview = QPushButton("▶")
+        preview.setFixedWidth(36)
+        preview.clicked.connect(lambda: plat.play_alert(edit.text().strip(), fallback, True))
+        row.addWidget(edit)
+        row.addWidget(browse)
+        row.addWidget(preview)
+        form.addRow(label, box)
+        return edit
+
+    def _browse_sound(self, edit: QLineEdit):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Choose alert sound", filter="Audio (*.wav *.ogg *.oga *.mp3 *.flac)")
+        if path:
+            edit.setText(path)
+
     def _pick_accent(self):
         c = QColorDialog.getColor()
         if c.isValid():
@@ -131,6 +158,8 @@ class SettingsDialog(QDialog):
         s.theme = self.cmb_theme.currentText()
         s.accent = self.btn_accent.text()
         s.sound = self.cb_sound.isChecked()
+        s.break_sound = self.ed_break_sound.text().strip()
+        s.focus_sound = self.ed_focus_sound.text().strip()
         s.notify = self.cb_notify.isChecked()
         s.minimize_to_tray = self.cb_tray.isChecked()
         s.dnd = self.cb_dnd.isChecked()
