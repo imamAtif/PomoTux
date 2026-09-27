@@ -1,0 +1,51 @@
+name: Package
+
+# Builds a portable Linux bundle on every push to main.
+# Pushing a tag like v0.2.0 additionally attaches it to a GitHub Release.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Sanity check
+        run: python -m compileall -q pomotux main.py
+
+      - name: Build with PyInstaller
+        run: pyinstaller --noconfirm --name PomoTux --onedir --windowed main.py
+
+      - name: Pack tarball
+        run: tar -czf PomoTux-linux-x86_64.tar.gz -C dist PomoTux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PomoTux-linux-x86_64
+          path: PomoTux-linux-x86_64.tar.gz
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
+          gh release upload "$TAG" PomoTux-linux-x86_64.tar.gz --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
