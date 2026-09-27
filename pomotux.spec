@@ -1,6 +1,6 @@
 # Keep Version in sync with pomotux.__version__ and debian/changelog.
 Name:           pomotux
-Version:        0.1.0
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        Lightweight premium Pomodoro timer for Linux
 License:        GPL-3.0-only
@@ -44,5 +44,7 @@ install -Dpm644 packaging/icons/io.github.pomotux.svg %{buildroot}%{_datadir}/ic
 %{_datadir}/icons/hicolor/scalable/apps/io.github.pomotux.svg
 
 %changelog
+* Sun Sep 27 2026 PomoTux Developers - 0.2.0-1
+- Stable release: pause indication, working sounds, new icon
 * Sun Sep 27 2026 PomoTux Developers - 0.1.0-1
 - Initial package

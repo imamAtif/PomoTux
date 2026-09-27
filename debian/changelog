@@ -1,3 +1,9 @@
+pomotux (0.2.0-1) unstable; urgency=medium
+
+  * Stable release: pause indication, working sounds, new icon.
+
+ -- PomoTux Developers <dev@pomotux.local>  Sun, 27 Sep 2026 00:00:00 +0000
+
 pomotux (0.1.0-1) unstable; urgency=medium
 
   * Initial release.

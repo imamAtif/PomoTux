@@ -285,7 +285,7 @@ class MainWindow(QMainWindow):
         app.setStyleSheet(build_qss(self._dark, self.s.accent))
         self.ring.set_accent(self.s.accent)
         self.ring.set_dark(self._dark)
-        self.bars._accent.setNamedColor(self.s.accent)
+        self.bars.set_accent(self.s.accent)
         self.refresh_stats()
 
     def _open_settings(self):

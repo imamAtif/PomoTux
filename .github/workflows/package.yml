@@ -1,6 +1,6 @@
 name: Package
 
-# build -> {tarball, deb, rpm, appimage, flatpak} in parallel -> release.
+# test + build -> {tarball, deb, rpm, appimage, flatpak} in parallel -> release.
 # Every push to main refreshes the rolling `dev` prerelease automatically.
 # Pushing a v* tag additionally publishes a stable versioned release.
 on:
@@ -13,6 +13,23 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
   build:
     runs-on: ubuntu-latest
     outputs:
@@ -224,7 +241,7 @@ jobs:
           path: pomotux-*.flatpak
 
   release:
-    needs: [tarball, deb, rpm, appimage, flatpak]
+    needs: [test, tarball, deb, rpm, appimage, flatpak]
     runs-on: ubuntu-latest
     concurrency:
       group: pomotux-release

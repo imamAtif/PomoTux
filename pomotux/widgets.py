@@ -69,6 +69,10 @@ class WeekBars(QWidget):
         self._vals, self._dark = list(vals), dark
         self.update()
 
+    def set_accent(self, accent: str):
+        self._accent = QColor(accent)
+        self.update()
+
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
