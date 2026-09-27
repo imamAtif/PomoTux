@@ -60,7 +60,10 @@ jobs:
           path: dist/PomoTux
 
       - name: Pack tarball
-        run: tar -czf "PomoTux-${{ needs.build.outputs.version }}-linux-x86_64.tar.gz" -C dist PomoTux
+        # artifact roundtrip drops the exec bit — restore it
+        run: |
+          chmod +x dist/PomoTux/PomoTux
+          tar -czf "PomoTux-${{ needs.build.outputs.version }}-linux-x86_64.tar.gz" -C dist PomoTux
 
       - uses: actions/upload-artifact@v4
         with:
@@ -81,6 +84,7 @@ jobs:
       - name: Build .deb
         run: |
           rm -rf pkgroot
+          chmod +x dist/PomoTux/PomoTux # artifact roundtrip drops the exec bit
           mkdir -p pkgroot/opt/pomotux pkgroot/usr/bin \
             pkgroot/usr/share/applications pkgroot/usr/share/icons pkgroot/DEBIAN
           cp -r dist/PomoTux/. pkgroot/opt/pomotux/
@@ -121,6 +125,7 @@ jobs:
       - name: Build .rpm
         run: |
           rm -rf pkgroot
+          chmod +x dist/PomoTux/PomoTux # artifact roundtrip drops the exec bit
           mkdir -p pkgroot/opt/pomotux pkgroot/usr/bin \
             pkgroot/usr/share/applications pkgroot/usr/share/icons
           cp -r dist/PomoTux/. pkgroot/opt/pomotux/
@@ -153,6 +158,7 @@ jobs:
       - name: Build AppImage
         run: |
           rm -rf AppDir && mkdir -p AppDir/usr/bin
+          chmod +x dist/PomoTux/PomoTux # artifact roundtrip drops the exec bit
           cp -r dist/PomoTux/. AppDir/usr/bin/
           ln -s PomoTux AppDir/usr/bin/pomotux
           cp packaging/io.github.pomotux.desktop AppDir/
