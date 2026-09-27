@@ -32,8 +32,9 @@
       "buildsystem": "simple",
       "sources": [
         {
-          "type": "dir",
-          "path": "@POMOTUX_SRC@"
+          "type": "git",
+          "url": "https://github.com/imamAtif/PomoTux.git",
+          "tag": "v0.3.0"
         }
       ],
       "build-commands": [

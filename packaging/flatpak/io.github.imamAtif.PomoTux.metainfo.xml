@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.imamAtif.PomoTux</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <name>PomoTux</name>
+  <summary>Lightweight premium Pomodoro timer for Linux</summary>
+  <description>
+    <p>
+      PomoTux is a fast, native Pomodoro timer: focus for 25 minutes,
+      break for 5, long break after every 4th session. Tasks link to the
+      timer, daily goals and streaks track progress, and an optional
+      website blocker keeps distractions away during focus.
+    </p>
+    <p>
+      Everything stays on your machine: no accounts, no tracking, with
+      JSON export and import for moving between devices.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.imamAtif.PomoTux.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source" width="460" height="720">https://raw.githubusercontent.com/imamAtif/PomoTux/v0.3.0/packaging/screenshots/dashboard.png</image>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="220" height="300">https://raw.githubusercontent.com/imamAtif/PomoTux/v0.3.0/packaging/screenshots/mini.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="0.3.0" date="2026-09-27">
+      <description>
+        <p>Stable release: enforced site blocker, silent helper, custom sounds.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1" />
+  <developer>
+    <name>imamAtif</name>
+  </developer>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <provides>
+    <binary>pomotux</binary>
+  </provides>
+  <url type="homepage">https://github.com/imamAtif/PomoTux</url>
+  <url type="bugtracker">https://github.com/imamAtif/PomoTux/issues</url>
+</component>
