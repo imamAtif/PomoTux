@@ -74,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
 
     win.mini_cb = lambda: (win.hide(), mini.show())
     mini.expand_cb = lambda: (mini.hide(), win.show(), win.apply_theme())
+    mini.quit_cb = win.close_app
 
     if s.first_run:
         dlg = OnboardingDialog(s, win)

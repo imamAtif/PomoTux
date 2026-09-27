@@ -45,6 +45,18 @@ def test_pause_mid_break(tmp_path, app):
     assert not win.ring._paused
 
 
+def test_mini_close_quits_app(tmp_path, app):
+    from pomotux.mini_window import MiniWindow
+    mini = MiniWindow(PomodoroTimer(), "#F2B705")
+    called = []
+    mini.quit_cb = lambda: called.append(True)
+    mini.show()
+    app.processEvents()
+    mini.close()
+    app.processEvents()
+    assert called == [True]
+
+
 def test_finish_logs_session(tmp_path, app):
     win, _mini, timer = _windows(tmp_path, app)
     win.ed_task.setText("UI task")

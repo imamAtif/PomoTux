@@ -15,6 +15,7 @@ class MiniWindow(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setFixedSize(220, 300)
         self.expand_cb = None
+        self.quit_cb = None  # wired to MainWindow.close_app: X quits the app
 
         lay = QVBoxLayout(self)
         lay.setAlignment(Qt.AlignCenter)
@@ -63,3 +64,8 @@ class MiniWindow(QWidget):
 
     def mouseReleaseEvent(self, _):
         self._drag = None
+
+    def closeEvent(self, e):
+        if self.quit_cb is not None:
+            self.quit_cb()
+        e.accept()
