@@ -80,6 +80,50 @@ def test_toggle_off_ignores_list(tmp_path, app, monkeypatch):
     assert win._sites_blocked is False
 
 
+def test_helper_source_resolves_in_checkout():
+    src = plat.block_helper_source()
+    assert src is not None and (src / "pomotux-hosts").is_file()
+
+
+def test_helper_source_resolves_in_frozen_bundle(tmp_path, monkeypatch):
+    bundle = tmp_path / "PomoTux-bundle"
+    data = bundle / "pomotux" / "block-helper"
+    data.mkdir(parents=True)
+    (data / "pomotux-hosts").write_text("#!/bin/sh\n")
+    (data / "io.github.pomotux.rules").write_text("// rule\n")
+    monkeypatch.setattr(plat.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(plat.sys, "executable", str(bundle / "PomoTux"))
+    assert plat.block_helper_source() == data
+
+
+def test_install_helper_stages_and_runs_pkexec_once(tmp_path, monkeypatch):
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "pomotux-hosts").write_text("#!/bin/sh\n")
+    (src / "io.github.pomotux.rules").write_text("// rule\n")
+    monkeypatch.setattr(plat.shutil, "which", lambda binary: "/usr/bin/pkexec")
+    monkeypatch.setattr(plat, "_HELPER", str(tmp_path / "installed-helper"))
+    calls = []
+
+    class Proc:
+        returncode = 0
+
+    def fake_run(argv, **kw):
+        calls.append(argv)
+        Path = __import__("pathlib").Path
+        Path(plat._HELPER).write_text("#!/bin/sh\n")
+        return Proc()
+
+    monkeypatch.setattr(plat.subprocess, "run", fake_run)
+    assert plat.install_block_helper(src) is True
+    assert calls and calls[0][:3] == ["pkexec", "sh", "-c"]
+    assert "install -Dm755" in calls[0][3]
+
+
+def test_install_helper_fails_cleanly(tmp_path):
+    assert plat.install_block_helper(tmp_path / "missing") is False
+
+
 def test_helper_preferred_over_tee(tmp_path, monkeypatch):
     f = tmp_path / "hosts"
     f.write_text("127.0.0.1 localhost\n")

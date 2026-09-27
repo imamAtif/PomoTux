@@ -99,6 +99,11 @@ class SettingsDialog(QDialog):
         self.ed_hosts = QLineEdit(", ".join(s.blocked_hosts))
         self.ed_hosts.setPlaceholderText("youtube.com, ... (asks for root on focus start)")
         form.addRow("Blocked hosts", self.ed_hosts)
+        self.lbl_helper = QLabel()
+        self.btn_helper = QPushButton("Set up silent blocking (one sudo prompt)")
+        self.btn_helper.clicked.connect(self._setup_helper)
+        form.addRow(self.lbl_helper, self.btn_helper)
+        self._refresh_helper_row()
         lay.addLayout(form)
 
         row = QHBoxLayout()
@@ -129,6 +134,27 @@ class SettingsDialog(QDialog):
         row.addWidget(preview)
         form.addRow(label, box)
         return edit
+
+    def _refresh_helper_row(self):
+        if plat.helper_installed():
+            self.lbl_helper.setText("Silent blocking")
+            self.btn_helper.setText("Active")
+            self.btn_helper.setEnabled(False)
+        elif plat.block_helper_source() is not None:
+            self.lbl_helper.setText("Silent blocking")
+            self.btn_helper.setText("Set up silent blocking (one sudo prompt)")
+            self.btn_helper.setEnabled(True)
+        else:
+            self.lbl_helper.setText("Silent blocking")
+            self.btn_helper.setText("Comes with the deb/rpm packages")
+            self.btn_helper.setEnabled(False)
+
+    def _setup_helper(self):
+        src = plat.block_helper_source()
+        ok = src is not None and plat.install_block_helper(src)
+        if not ok:
+            plat.notify(None, "PomoTux", "Silent blocking setup failed", True)
+        self._refresh_helper_row()
 
     def _browse_sound(self, edit: QLineEdit):
         path, _ = QFileDialog.getOpenFileName(

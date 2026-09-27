@@ -75,11 +75,12 @@ list is ignored entirely.
 Blocking works by writing a managed block to `/etc/hosts`, which only root
 can change. Two ways to authorize it:
 
-* **Once (recommended):** run `sudo ./packaging/block-helper/install.sh`
-  (deb/rpm packages do this for you). After that, blocking and unblocking
-  are silent forever.
+* **Once (recommended):** run `sudo ./packaging/block-helper/install.sh`,
+  press *Set up silent blocking* in Settings (AppImage/tarball), or just
+  install the deb/rpm, which set it up automatically. After that, blocking
+  and unblocking are silent forever.
 * **Without setup:** the app asks for your password via `pkexec` every time
-  the block is applied or removed (each focus and break start).
+  the block is applied or removed.
 
 The block is removed on break or quit. If the app is ever killed mid-focus,
 the next launch detects the leftover block and clears it. Denying

@@ -1,9 +1,11 @@
 """Linux integrations: notify, sound, DND, autostart. Best-effort, never fatal."""
 from __future__ import annotations
 
+import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 _SOUNDS = Path(__file__).parent / "sounds"
@@ -136,6 +138,51 @@ def has_managed_block(hosts_file: str = "/etc/hosts") -> bool:
         return START_MARK in Path(hosts_file).read_text()
     except OSError:
         return False
+
+
+def helper_installed() -> bool:
+    return Path(_HELPER).is_file()
+
+
+def block_helper_source() -> Path | None:
+    """Dir holding pomotux-hosts + rule for the setup button (any package)."""
+    candidates = []
+    if getattr(sys, "frozen", False):
+        # PyInstaller bundle (tarball/AppImage): datas sit beside the binary.
+        candidates.append(Path(sys.executable).parent / "pomotux" / "block-helper")
+    else:
+        candidates.append(Path(__file__).parent.parent / "packaging" / "block-helper")
+    for d in candidates:
+        if (d / "pomotux-hosts").is_file() and (d / "io.github.pomotux.rules").is_file():
+            return d
+    return None
+
+
+def install_block_helper(srcdir: Path) -> bool:
+    """One-click setup: stage files where root can read them, install via
+    a single pkexec prompt. Needed for AppImage/tarball (deb/rpm do it)."""
+    host, rule = Path(srcdir) / "pomotux-hosts", Path(srcdir) / "io.github.pomotux.rules"
+    if not (host.is_file() and rule.is_file()) or not shutil.which("pkexec"):
+        return False
+    # Stage under /tmp: root cannot read user FUSE mounts (AppImage).
+    tmp = Path(tempfile.mkdtemp(prefix="pomotux-helper-"))
+    try:
+        tmp.chmod(0o755)
+        for src, mode in ((host, 0o755), (rule, 0o644)):
+            dest = tmp / src.name
+            shutil.copy(src, dest)
+            dest.chmod(mode)
+        script = (f"install -Dm755 {shlex.quote(str(tmp / host.name))} {_HELPER} && "
+                  f"install -Dm644 {shlex.quote(str(tmp / rule.name))} "
+                  "/usr/share/polkit-1/rules.d/io.github.pomotux.rules")
+        r = subprocess.run(["pkexec", "sh", "-c", script],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           check=False)
+        return r.returncode == 0 and helper_installed()
+    except Exception:
+        return False
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def set_hosts_blocked(hosts: list[str], blocked: bool,
