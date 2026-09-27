@@ -21,6 +21,7 @@ class PomodoroTimer(QObject):
     ticked = Signal(int, str)      # remaining_sec, phase value
     phase_changed = Signal(str)    # phase value
     finished = Signal(str)         # phase just completed
+    started = Signal()             # timer (re)started
 
     def __init__(self, focus_s=25 * 60, short_s=5 * 60, long_s=15 * 60,
                  long_every=4, parent=None):
@@ -62,6 +63,7 @@ class PomodoroTimer(QObject):
             self.remaining = self.durations[self.phase]
         self.running = True
         self._qt.start()
+        self.started.emit()
 
     def pause(self):
         self.running = False

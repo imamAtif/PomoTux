@@ -90,3 +90,66 @@ def set_autostart(on: bool):
             desktop.unlink()
         except FileNotFoundError:
             pass
+
+
+START_MARK = "# pomotux block start (managed by PomoTux, do not edit)"
+END_MARK = "# pomotux block end"
+
+
+def blocked_variants(hosts: list[str]) -> list[str]:
+    """Each host plus its www counterpart, normalized and deduplicated."""
+    out = set()
+    for h in hosts:
+        h = h.strip().lower().rstrip(".")
+        if not h:
+            continue
+        out.add(h)
+        out.add(h[4:] if h.startswith("www.") else "www." + h)
+    return sorted(out)
+
+
+def update_hosts(text: str, hosts: list[str], blocked: bool) -> str:
+    """Add/remove the managed block. Pure function, safe to test."""
+    kept, skipping = [], False
+    for ln in text.splitlines():
+        stripped = ln.strip()
+        if stripped == START_MARK:
+            skipping = True
+            continue
+        if stripped == END_MARK:
+            skipping = False
+            continue
+        if not skipping:
+            kept.append(ln)
+    if blocked and hosts:
+        kept.append(START_MARK)
+        kept += [f"127.0.0.1 {h}" for h in blocked_variants(hosts)]
+        kept.append(END_MARK)
+    out = "\n".join(kept)
+    return out + "\n" if text.endswith("\n") and out else out
+
+
+def set_hosts_blocked(hosts: list[str], blocked: bool,
+                      hosts_file: str = "/etc/hosts") -> bool:
+    """Apply/remove the DNS block. Asks for root only when a change is needed."""
+    try:
+        current = Path(hosts_file).read_text()
+    except OSError:
+        return False
+    updated = update_hosts(current, hosts, blocked)
+    if updated == current:
+        return True  # already in the desired state, no auth needed
+    try:
+        Path(hosts_file).write_text(updated)
+        return True
+    except OSError:
+        pass
+    if not shutil.which("pkexec"):
+        return False
+    try:
+        r = subprocess.run(["pkexec", "tee", hosts_file], input=updated.encode(),
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           check=False)
+        return r.returncode == 0
+    except Exception:
+        return False

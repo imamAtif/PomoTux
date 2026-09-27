@@ -95,6 +95,7 @@ class SettingsDialog(QDialog):
         form.addRow("Shortcut: mini mode", self.key_mini)
 
         self.ed_hosts = QLineEdit(", ".join(s.blocked_hosts))
+        self.ed_hosts.setPlaceholderText("youtube.com, ... (asks for root on focus start)")
         form.addRow("Blocked hosts", self.ed_hosts)
         lay.addLayout(form)
 

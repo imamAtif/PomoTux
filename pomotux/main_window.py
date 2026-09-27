@@ -93,9 +93,12 @@ class MainWindow(QMainWindow):
 
         self._tray()
         self._shortcuts()
+        self._sites_blocked = False
+        self._block_nagged = False
         timer.ticked.connect(self._on_tick)
         timer.phase_changed.connect(self._on_phase)
         timer.finished.connect(self._on_finished)
+        timer.started.connect(self._on_started)
         self._on_phase(timer.phase.value)
         self._on_tick(timer.remaining, timer.phase.value)
         self.refresh_tasks()
@@ -200,6 +203,22 @@ class MainWindow(QMainWindow):
         for ph, b in self.mode_btns.items():
             b.setChecked(ph.value == phase)
         self._refresh_state()
+        self._block_nagged = False
+        if phase != Phase.FOCUS.value and self._sites_blocked:
+            plat.set_hosts_blocked(self.s.blocked_hosts, False)
+            self._sites_blocked = False
+
+    def _on_started(self):
+        # Entering focus run: enforce the site block (prompts for root
+        # only when the hosts file actually needs changing).
+        if (self.timer.phase == Phase.FOCUS and self.s.blocker_enabled
+                and self.s.blocked_hosts and not self._sites_blocked):
+            self._sites_blocked = plat.set_hosts_blocked(self.s.blocked_hosts, True)
+            if not self._sites_blocked and not self._block_nagged:
+                self._block_nagged = True
+                plat.notify(self.tray, "PomoTux",
+                            "Website blocker needs authorization: sites not blocked",
+                            self.s.notify)
 
     def _on_finished(self, kind: str):
         # log focus sessions (+1 on linked task)
@@ -291,6 +310,7 @@ class MainWindow(QMainWindow):
     def _open_settings(self):
         dlg = SettingsDialog(self.s, self.store, self)
         if dlg.exec():
+            old_hosts = list(self.s.blocked_hosts)
             dlg.apply(self.s)
             self.s.save()
             plat.set_autostart(self.s.autostart)
@@ -299,6 +319,12 @@ class MainWindow(QMainWindow):
             self._reload_shortcuts()
             self.apply_theme()
             self.refresh_stats()
+            # Re-apply the block if the host list changed mid-focus.
+            if self._sites_blocked:
+                plat.set_hosts_blocked(old_hosts, False)
+                self._sites_blocked = False
+            if self.timer.running:
+                self._on_started()
 
     def _to_mini(self):
         if self.mini_cb:
@@ -308,6 +334,9 @@ class MainWindow(QMainWindow):
         self.setVisible(not self.isVisible())
 
     def close_app(self):
+        if self._sites_blocked:
+            plat.set_hosts_blocked(self.s.blocked_hosts, False)
+            self._sites_blocked = False
         plat.set_dnd(False)
         self.tray.hide()
         from PySide6.QtWidgets import QApplication
