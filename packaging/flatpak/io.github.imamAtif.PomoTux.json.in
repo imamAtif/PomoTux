@@ -33,7 +33,7 @@
       "sources": [
         {
           "type": "dir",
-          "path": "."
+          "path": "@POMOTUX_SRC@"
         }
       ],
       "build-commands": [

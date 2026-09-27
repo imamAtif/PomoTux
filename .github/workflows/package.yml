@@ -181,6 +181,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Stage sources
+        # dir sources resolve relative paths ambiguously, so bake an
+        # absolute source path into a generated manifest instead.
+        run: |
+          rm -rf flatpak-src build-dir repo flatpak-manifest.json
+          mkdir flatpak-src
+          git archive HEAD | tar -x -C flatpak-src
+          sed "s|@POMOTUX_SRC@|$GITHUB_WORKSPACE/flatpak-src|" \
+            packaging/flatpak/io.github.imamAtif.PomoTux.json.in > flatpak-manifest.json
+          test -f flatpak-src/main.py && grep -q flatpak-src flatpak-manifest.json
+
       - name: Install flatpak
         run: sudo apt-get update -qq && sudo apt-get install -y -qq flatpak flatpak-builder
 
@@ -192,12 +203,12 @@ jobs:
       - name: Build
         run: >
           sudo flatpak-builder --force-clean --ccache --disable-rofiles-fuse
-          --repo=repo build-dir packaging/flatpak/io.github.imamAtif.PomoTux.json
+          --repo=repo build-dir flatpak-manifest.json
 
       - name: Smoke test
         run: >
           sudo flatpak-builder --run build-dir
-          packaging/flatpak/io.github.imamAtif.PomoTux.json
+          flatpak-manifest.json
           python3 /app/share/pomotux/main.py --version
 
       - name: Bundle
