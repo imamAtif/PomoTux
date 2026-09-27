@@ -1,8 +1,8 @@
 name: Package
 
 # build -> {tarball, deb, rpm, appimage} in parallel -> release.
-# Every push to main builds all four; v* tags additionally attach them
-# to a GitHub Release.
+# Every push to main refreshes the rolling `dev` prerelease automatically.
+# Pushing a v* tag additionally publishes a stable versioned release.
 on:
   push:
     branches: [main]
@@ -171,15 +171,28 @@ jobs:
 
   release:
     needs: [tarball, deb, rpm, appimage]
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    concurrency:
+      group: pomotux-release
+      cancel-in-progress: false
     steps:
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
           path: release-assets
 
-      - name: Attach to GitHub Release
+      - name: Publish rolling dev release
+        if: github.ref == 'refs/heads/main'
+        run: |
+          gh release delete dev --cleanup-tag --yes || true
+          gh release create dev --prerelease --title "Development build" \
+            --notes "Latest automatic build from main. Stable versions are the v* releases below." \
+            release-assets/*
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish versioned release
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
