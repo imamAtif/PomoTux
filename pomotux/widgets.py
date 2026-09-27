@@ -20,9 +20,10 @@ class TimerRing(QWidget):
         self._sec = 25 * 60
         self._accent = QColor(accent)
         self._dark = True
+        self._paused = True  # gray ring until the timer runs
 
-    def set_state(self, sec: int, progress: float):
-        self._sec, self._progress = sec, progress
+    def set_state(self, sec: int, progress: float, paused: bool):
+        self._sec, self._progress, self._paused = sec, progress, paused
         self.update()
 
     def set_accent(self, accent: str):
@@ -42,11 +43,14 @@ class TimerRing(QWidget):
         p.setPen(QPen(track, 14, Qt.SolidLine, Qt.RoundCap))
         p.drawEllipse(rect)
         if self._progress > 0:
-            p.setPen(QPen(self._accent, 14, Qt.SolidLine, Qt.RoundCap))
+            arc = QColor("#6B7280") if self._paused else self._accent
+            p.setPen(QPen(arc, 14, Qt.SolidLine, Qt.RoundCap))
             # -90° = top; Qt spans clockwise in 1/16°
             p.drawArc(rect, -90 * 16, -int(self._progress * 360 * 16))
 
-        p.setPen(self._accent if self._dark else QColor("#17181C"))
+        time_color = QColor("#9AA0AE") if self._paused else (
+            self._accent if self._dark else QColor("#17181C"))
+        p.setPen(time_color)
         p.setFont(QFont("Inter, Ubuntu", 40, QFont.Bold))
         p.drawText(self.rect(), Qt.AlignCenter, fmt(self._sec))
 

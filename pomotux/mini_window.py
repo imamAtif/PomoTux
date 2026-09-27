@@ -36,16 +36,22 @@ class MiniWindow(QWidget):
         lay.addLayout(row)
 
         timer.ticked.connect(self._tick)
-        timer.phase_changed.connect(lambda p: self.lbl.setText(LABELS[timer.phase]))
+        timer.phase_changed.connect(lambda p: self._tick(timer.remaining, p))
         self._tick(timer.remaining, timer.phase.value)
 
         # drag to move (frameless)
         self._drag = None
 
     def _tick(self, sec: int, _p: str):
-        self.ring.set_state(sec, self.timer.progress)
-        self.btn_play.setText("⏸" if self.timer.running else "▶")
-        self.setWindowTitle(f"PomoTux {fmt(sec)}")
+        t = self.timer
+        self.ring.set_state(sec, t.progress, paused=not t.running)
+        self.btn_play.setText("⏸" if t.running else "▶")
+        if t.running:
+            self.lbl.setText(LABELS[t.phase])
+        else:
+            self.lbl.setText("Paused" if sec < t.total else LABELS[t.phase])
+        state = "" if t.running else " (paused)"
+        self.setWindowTitle(f"PomoTux {fmt(sec)}{state}")
 
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:

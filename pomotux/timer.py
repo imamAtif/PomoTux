@@ -69,6 +69,7 @@ class PomodoroTimer(QObject):
 
     def toggle(self):
         self.pause() if self.running else self.start()
+        self.ticked.emit(self.remaining, self.phase.value)
 
     def reset(self):
         self.pause()

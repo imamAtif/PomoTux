@@ -63,9 +63,12 @@ class MainWindow(QMainWindow):
         cl = QVBoxLayout(card)
         cl.setAlignment(Qt.AlignCenter)
         self.ring = TimerRing(accent=s.accent)
+        self.lbl_state = QLabel(objectName="title")
+        self.lbl_state.setAlignment(Qt.AlignCenter)
         self.lbl_task = QLabel("No task selected", objectName="muted")
         self.lbl_task.setAlignment(Qt.AlignCenter)
         cl.addWidget(self.ring, alignment=Qt.AlignCenter)
+        cl.addWidget(self.lbl_state)
         cl.addWidget(self.lbl_task)
         lay.addWidget(card)
 
@@ -175,14 +178,28 @@ class MainWindow(QMainWindow):
 
     # -- timer slots ------------------------------------------------------
     def _on_tick(self, sec: int, _phase: str):
-        self.ring.set_state(sec, self.timer.progress)
+        self.ring.set_state(sec, self.timer.progress, paused=not self.timer.running)
         name = LABELS[self.timer.phase]
-        self.tray.setToolTip(f"PomoTux: {name} {fmt(sec)}")
+        state = "" if self.timer.running else " (paused)"
+        self.tray.setToolTip(f"PomoTux: {name} {fmt(sec)}{state}")
         self.btn_main.setText("Pause" if self.timer.running else "Start")
+        self._refresh_state()
+
+    def _refresh_state(self):
+        t = self.timer
+        if t.running:
+            text = {"focus": "Focusing", "short": "On short break",
+                    "long": "On long break"}[t.phase.value]
+        elif t.remaining >= t.total:
+            text = "Ready"
+        else:
+            text = "Paused"
+        self.lbl_state.setText(text)
 
     def _on_phase(self, phase: str):
         for ph, b in self.mode_btns.items():
             b.setChecked(ph.value == phase)
+        self._refresh_state()
 
     def _on_finished(self, kind: str):
         # log focus sessions (+1 on linked task)
