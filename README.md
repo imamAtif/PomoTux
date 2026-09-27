@@ -17,18 +17,18 @@
 
 PomoTux is a Pomodoro technique timer that stays out of your way: focus for 25
 minutes, break for 5, long break after every 4th session. On top of the timer
-you get the pieces that make the technique stick — tasks linked to sessions,
+you get the pieces that make the technique stick: tasks linked to sessions,
 daily goals with streaks, a mini player, tray integration and Linux-native
 notifications.
 
-- **Timer** — 25 / 5 / 15 defaults, fully customizable, with presets via mode buttons
-- **Mini + full mode** — floating always-on-top ring, or the full dashboard (Spotify-style toggle)
-- **Tasks** — link the current task to the timer; completed pomodoros count per task
-- **Stats** — today's progress vs. daily goal, 7-day bar chart, day streak — all local SQLite
-- **Desktop integration** — tray icon with live time, native notifications, chime, minimize-to-tray, autostart
-- **Focus extras (all opt-in)** — GNOME Do-Not-Disturb, fullscreen break reminder, host blocker list
-- **Themes** — follows your GNOME/KDE dark/light mode, with accent-color picker and Tux branding
-- **Private by design** — everything stays on your machine; move devices with one JSON export/import
+- **Timer**: 25 / 5 / 15 defaults, fully customizable, with presets via mode buttons
+- **Mini + full mode**: floating always-on-top ring, or the full dashboard (Spotify-style toggle)
+- **Tasks**: link the current task to the timer; completed pomodoros count per task
+- **Stats**: today's progress vs. daily goal, 7-day bar chart, day streak: all local SQLite
+- **Desktop integration**: tray icon with live time, native notifications, chime, minimize-to-tray, autostart
+- **Focus extras (all opt-in)**: GNOME Do-Not-Disturb, fullscreen break reminder, host blocker list
+- **Themes**: follows your GNOME/KDE dark/light mode, with accent-color picker and Tux branding
+- **Private by design**: everything stays on your machine; move devices with one JSON export/import
 
 ## Install
 
@@ -46,15 +46,15 @@ Grab the latest build from the
 
 ## Use it
 
-1. **First launch** — an onboarding dialog asks which extras you want (DND,
+1. **First launch**: an onboarding dialog asks which extras you want (DND,
    blocker, break overlay). Everything is optional and changeable later.
-2. **Pick a task** (optional) — add one under *Tasks*, click it so the timer
+2. **Pick a task** (optional): add one under *Tasks*, click it so the timer
    shows it as the current goal.
-3. **Hit Start** (or `Space`) — work until the chime. Finishing a focus
+3. **Hit Start** (or `Space`): work until the chime. Finishing a focus
    session logs it and starts your break.
-4. **Skipping** — `N` skips the current phase, `M` toggles the mini player.
-5. **Track** — the *Stats* tab shows today vs. your daily goal and your streak.
-6. **Move machines** — *Settings → Export JSON*, then *Import JSON* on the
+4. **Skipping**: `N` skips the current phase, `M` toggles the mini player.
+5. **Track**: the *Stats* tab shows today vs. your daily goal and your streak.
+6. **Move machines**: *Settings → Export JSON*, then *Import JSON* on the
    other device. No cloud involved.
 
 Settings (durations, theme, shortcuts, sounds, autostart, blocked hosts) all
@@ -69,8 +69,8 @@ python3 -m venv .venv
 ```
 
 Requirements: Python 3.10+ and `PySide6-Essentials` (installed via
-`requirements.txt`). Every push to `main` is packaged automatically —
-tarball, AppImage, .deb, .rpm and Flatpak — see
+`requirements.txt`). Every push to `main` is packaged automatically:
+tarball, AppImage, .deb, .rpm and Flatpak: see
 [.github/workflows/package.yml](.github/workflows/package.yml).
 
 ## Project layout

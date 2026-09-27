@@ -177,7 +177,7 @@ class MainWindow(QMainWindow):
     def _on_tick(self, sec: int, _phase: str):
         self.ring.set_state(sec, self.timer.progress)
         name = LABELS[self.timer.phase]
-        self.tray.setToolTip(f"PomoTux — {name} {fmt(sec)}")
+        self.tray.setToolTip(f"PomoTux: {name} {fmt(sec)}")
         self.btn_main.setText("Pause" if self.timer.running else "Start")
 
     def _on_phase(self, phase: str):
@@ -195,7 +195,7 @@ class MainWindow(QMainWindow):
         self.refresh_stats()
         plat.beep(self.s.sound)
         plat.notify(self, self.tray, "PomoTux",
-                    "Focus done — break time 🐧" if kind == "focus" else "Break over — back to it!",
+                    "Focus done: break time 🐧" if kind == "focus" else "Break over: back to it!",
                     self.s.notify)
         # DND only during focus
         plat.set_dnd(self.s.dnd and self.timer.phase != Phase.FOCUS)

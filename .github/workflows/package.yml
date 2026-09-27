@@ -60,7 +60,7 @@ jobs:
           path: dist/PomoTux
 
       - name: Pack tarball
-        # artifact roundtrip drops the exec bit — restore it
+        # artifact roundtrip drops the exec bit: restore it
         run: |
           chmod +x dist/PomoTux/PomoTux
           tar -czf "PomoTux-${{ needs.build.outputs.version }}-linux-x86_64.tar.gz" -C dist PomoTux
