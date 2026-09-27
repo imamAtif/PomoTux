@@ -30,6 +30,9 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/ -q
 
+      - name: Check version sync
+        run: python packaging/check_version.py
+
   build:
     runs-on: ubuntu-latest
     outputs:

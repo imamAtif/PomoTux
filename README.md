@@ -11,6 +11,11 @@
 
 <p align="center"><b>A lightweight, good-looking Pomodoro timer for Linux.</b><br>Native Qt, ~30&nbsp;MB RAM, no Electron, no accounts, no tracking.</p>
 
+<p align="center">
+  <img src="packaging/screenshots/dashboard.png" alt="PomoTux dashboard" width="300">
+  <img src="packaging/screenshots/mini.png" alt="PomoTux mini player" width="180">
+</p>
+
 ---
 
 ## What it is
@@ -88,4 +93,6 @@ pomotux/
   dialogs.py            onboarding, settings, break overlay
   platform_linux.py     notifications, DND, autostart
 packaging/              desktop file, icons, flatpak manifest, CI assets
+tests/                  pytest suite (timer, store, UI state)
+pomotux.spec debian/    native distro packaging (COPR, PPA)
 ```

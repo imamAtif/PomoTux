@@ -51,7 +51,7 @@ class TimerRing(QWidget):
         time_color = QColor("#9AA0AE") if self._paused else (
             self._accent if self._dark else QColor("#17181C"))
         p.setPen(time_color)
-        p.setFont(QFont("Inter, Ubuntu", 40, QFont.Bold))
+        p.setFont(QFont("Inter, Ubuntu", max(12, self.width() // 7), QFont.Bold))
         p.drawText(self.rect(), Qt.AlignCenter, fmt(self._sec))
 
 
