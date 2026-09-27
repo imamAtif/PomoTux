@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=PomoTux
+Comment=Lightweight premium Pomodoro timer for Linux
+Exec=pomotux
+Icon=io.github.pomotux
+Terminal=false
+Categories=Utility;
+StartupWMClass=PomoTux

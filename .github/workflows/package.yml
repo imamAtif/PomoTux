@@ -1,7 +1,7 @@
 name: Package
 
-# Builds a portable Linux bundle on every push to main.
-# Pushing a tag like v0.2.0 additionally attaches it to a GitHub Release.
+# Every push to main builds tarball + AppImage + .deb + .rpm.
+# Pushing a tag like v0.2.0 additionally attaches them to a GitHub Release.
 on:
   push:
     branches: [main]
@@ -29,23 +29,84 @@ jobs:
       - name: Sanity check
         run: python -m compileall -q pomotux main.py
 
+      - name: Resolve version
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION=0.0.0+${GITHUB_SHA:0:7}" >> "$GITHUB_ENV"
+          fi
+
       - name: Build with PyInstaller
         run: pyinstaller --noconfirm --name PomoTux --onedir --windowed main.py
 
-      - name: Pack tarball
-        run: tar -czf PomoTux-linux-x86_64.tar.gz -C dist PomoTux
+      - name: Stage install tree
+        run: |
+          rm -rf pkgroot
+          mkdir -p pkgroot/opt/pomotux pkgroot/usr/bin \
+            pkgroot/usr/share/applications pkgroot/usr/share/icons
+          cp -r dist/PomoTux/. pkgroot/opt/pomotux/
+          ln -s /opt/pomotux/PomoTux pkgroot/usr/bin/pomotux
+          cp packaging/io.github.pomotux.desktop pkgroot/usr/share/applications/
+          cp -r packaging/icons/hicolor pkgroot/usr/share/icons/
+          cp packaging/icons/io.github.pomotux.svg pkgroot/usr/share/icons/
 
-      - name: Upload artifact
+      - name: Pack tarball
+        run: tar -czf "PomoTux-${VERSION}-linux-x86_64.tar.gz" -C dist PomoTux
+
+      - name: Build .deb
+        run: |
+          mkdir -p pkgroot/DEBIAN
+          {
+            echo "Package: pomotux"
+            echo "Version: $VERSION"
+            echo "Section: utils"
+            echo "Priority: optional"
+            echo "Architecture: amd64"
+            echo "Maintainer: PomoTux Developers"
+            echo "Description: Lightweight premium Pomodoro timer for Linux"
+            echo " PomoTux is a fast, native Pomodoro timer with tasks,"
+            echo " stats, tray integration and custom themes."
+          } > pkgroot/DEBIAN/control
+          dpkg-deb --root-owner-group --build pkgroot "pomotux-${VERSION}-amd64.deb"
+          rm -rf pkgroot/DEBIAN
+
+      - name: Build .rpm
+        run: |
+          sudo gem install --no-document fpm
+          fpm -s dir -t rpm -C pkgroot --name pomotux --version "$VERSION" \
+            --architecture x86_64 \
+            --description "Lightweight premium Pomodoro timer for Linux" \
+            --package "pomotux-${VERSION}-x86_64.rpm" opt usr
+
+      - name: Build AppImage
+        run: |
+          rm -rf AppDir && mkdir -p AppDir/usr/bin
+          cp -r dist/PomoTux/. AppDir/usr/bin/
+          ln -s PomoTux AppDir/usr/bin/pomotux
+          cp packaging/io.github.pomotux.desktop AppDir/
+          cp packaging/icons/hicolor/256x256/apps/io.github.pomotux.png AppDir/
+          printf '#!/bin/sh\nHERE="$(dirname "$(readlink -f "${0}")")"\nexec "${HERE}/usr/bin/PomoTux" "$@"\n' > AppDir/AppRun
+          chmod +x AppDir/AppRun
+          wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool
+          chmod +x appimagetool
+          ARCH=x86_64 ./appimagetool --appimage-extract-and-run AppDir "PomoTux-${VERSION}-x86_64.AppImage"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: PomoTux-linux-x86_64
-          path: PomoTux-linux-x86_64.tar.gz
+          name: pomotux-packages
+          path: |
+            PomoTux-*.tar.gz
+            pomotux-*.deb
+            pomotux-*.rpm
+            PomoTux-*.AppImage
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
-          gh release upload "$TAG" PomoTux-linux-x86_64.tar.gz --clobber
+          gh release upload "$TAG" PomoTux-*.tar.gz pomotux-*.deb pomotux-*.rpm PomoTux-*.AppImage --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
