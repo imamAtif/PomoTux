@@ -1,7 +1,7 @@
 """Full dashboard window: timer + tasks + stats + tray."""
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QIcon, QShortcut, QKeySequence
 from PySide6.QtWidgets import (QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
                                QMainWindow, QMenu, QPushButton,
@@ -99,6 +99,7 @@ class MainWindow(QMainWindow):
         timer.phase_changed.connect(self._on_phase)
         timer.finished.connect(self._on_finished)
         timer.started.connect(self._on_started)
+        timer.started.connect(lambda: self._on_tick(timer.remaining, timer.phase.value))
         self._on_phase(timer.phase.value)
         self._on_tick(timer.remaining, timer.phase.value)
         self.refresh_tasks()
@@ -167,18 +168,21 @@ class MainWindow(QMainWindow):
         self.tray.show()
 
     def _shortcuts(self):
+        self._shortcut_objs = []
         for attr, fn in (("shortcut_toggle", self.timer.toggle),
                          ("shortcut_skip", self.timer.skip),
                          ("shortcut_mini", self._to_mini)):
             sc = QShortcut(QKeySequence(getattr(self.s, attr)), self)
             sc.setContext(Qt.ApplicationShortcut)
             sc.activated.connect(fn)
-        self._shortcut_objs = self.findChildren(QShortcut)  # keep refs via parent
+            self._shortcut_objs.append((attr, sc))
 
     def _reload_shortcuts(self):
-        for sc in self.findChildren(QShortcut):
-            sc.deleteLater()
-        self._shortcuts()
+        # Update keys in place: recreating via deleteLater() is async and
+        # stacked duplicates (each Settings save added +3 live shortcuts,
+        # so Space would toggle twice = no-op).
+        for attr, sc in getattr(self, "_shortcut_objs", []):
+            sc.setKey(QKeySequence(getattr(self.s, attr)))
 
     # -- timer slots ------------------------------------------------------
     def _on_tick(self, sec: int, _phase: str):
@@ -228,7 +232,7 @@ class MainWindow(QMainWindow):
             if self._task_id:
                 self.store.bump_pomodoros(self._task_id)
         else:
-            self.store.log_session(kind, 60, None)
+            self.store.log_session(kind, self.timer.durations[Phase(kind)], None)
         self.refresh_stats()
         if kind == "focus":
             plat.play_alert(self.s.break_sound, "break_start", self.s.sound)
@@ -238,17 +242,25 @@ class MainWindow(QMainWindow):
             plat.play_alert(self.s.focus_sound, "focus_start", self.s.sound)
             plat.notify(self.tray, "PomoTux", "Break over: back to it!",
                         self.s.notify)
-        # DND only during focus
-        plat.set_dnd(self.s.dnd and self.timer.phase != Phase.FOCUS)
         if kind == "focus" and self.s.break_overlay:
+            plat.set_dnd(False)  # break starting: drop DND promptly
             self.present()
             BreakOverlay("Break time!", self).exec()
             self.present()
-        # auto-start chain
-        if kind == "focus" and self.s.auto_start_breaks:
-            self.timer.start()
-        elif kind != "focus" and self.s.auto_start_focus:
-            self.timer.start()
+        # DND + auto-start depend on the NEW phase, but this slot runs
+        # inside the `finished` emit, i.e. before timer._advance() switches
+        # phases (and before _on_started would see the right phase).
+        # Defer so blocker/DND engage correctly (esp. auto-started focus).
+        want_break_autostart = kind == "focus" and self.s.auto_start_breaks
+        want_focus_autostart = kind != "focus" and self.s.auto_start_focus
+
+        def _after_advance():
+            # DND only during focus
+            plat.set_dnd(self.s.dnd and self.timer.phase == Phase.FOCUS)
+            if want_break_autostart or want_focus_autostart:
+                self.timer.start()
+
+        QTimer.singleShot(0, _after_advance)
 
     # -- tasks ------------------------------------------------------------
     def refresh_tasks(self):

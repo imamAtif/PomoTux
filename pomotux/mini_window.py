@@ -38,6 +38,7 @@ class MiniWindow(QWidget):
 
         timer.ticked.connect(self._tick)
         timer.phase_changed.connect(lambda p: self._tick(timer.remaining, p))
+        timer.started.connect(lambda: self._tick(timer.remaining, timer.phase.value))
         self._tick(timer.remaining, timer.phase.value)
 
         # drag to move (frameless)

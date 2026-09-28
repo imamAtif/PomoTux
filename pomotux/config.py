@@ -17,8 +17,8 @@ class Settings:
     long_min: int = 15
     long_every: int = 4  # focus sessions before a long break
 
-    auto_start_breaks: bool = False
-    auto_start_focus: bool = False
+    auto_start_breaks: bool = True
+    auto_start_focus: bool = True
 
     theme: str = "auto"  # auto | dark | light
     accent: str = "#F2B705"  # Tux yellow
