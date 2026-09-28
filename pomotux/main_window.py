@@ -241,7 +241,9 @@ class MainWindow(QMainWindow):
         # DND only during focus
         plat.set_dnd(self.s.dnd and self.timer.phase != Phase.FOCUS)
         if kind == "focus" and self.s.break_overlay:
-            BreakOverlay("Break time!").exec()
+            self.present()
+            BreakOverlay("Break time!", self).exec()
+            self.present()
         # auto-start chain
         if kind == "focus" and self.s.auto_start_breaks:
             self.timer.start()

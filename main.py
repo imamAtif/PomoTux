@@ -37,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
         print(__version__)
         return 0
     app = QApplication(argv)
+    app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("PomoTux")
     app.setOrganizationName("PomoTux")
     app.setDesktopFileName(__app_id__)

@@ -211,13 +211,18 @@ class BreakOverlay(QDialog):
 
     def __init__(self, text: str, parent=None):
         super().__init__(parent, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
-        self.setModal(False)
-        self.setWindowState(Qt.WindowFullScreen)
+        self.setModal(True)
         lay = QVBoxLayout(self)
         lay.setAlignment(Qt.AlignCenter)
         msg = QLabel(f"<h1>🐧 {text}</h1><p>Stand up · water · look away</p>")
         msg.setAlignment(Qt.AlignCenter)
         btn = QPushButton("Back to PomoTux")
         btn.setObjectName("primary")
-        btn.clicked.connect(self.close)
+        btn.clicked.connect(self.accept)
         lay.addWidget(msg); lay.addWidget(btn, alignment=Qt.AlignCenter)
+
+    def exec(self):  # keep fullscreen even when parented/hidden
+        self.showFullScreen()
+        self.raise_()
+        self.activateWindow()
+        return super().exec()
